@@ -54,7 +54,7 @@
         Use any image editing software you like to create a 480×240 pixel PNG image that you want to
         display on the VEX Brain's whole screen (Transparency is supported). Then, upload the image
         using the file input below. The code will be generated and displayed for you to copy or
-        download. Insert the code into your VEX C++ project and call the
+        download. Insert the code into your VEX Python project and call the
         <code class="border rounded-md text-primary">drawLogo()</code> method to display the image.
       </p>
 
@@ -90,7 +90,7 @@
 
       <div v-if="generatedCode">
         <div class="mt-2 md:mt-4 p-6 rounded-lg max-h-96 overflow-scroll justify-center border code-block">
-          <pre v-html="highlightedCode" class="language-cpp"></pre>
+          <pre v-html="highlightedCode" class="language-python"></pre>
         </div>
 
         <p class="pt-2">
@@ -179,7 +179,7 @@ function processImage() {
   const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height).data
 
   const encodedImage = encodeImage(imageData, canvas.width, canvas.height)
-  generatedCode.value = generateCpp(encodedImage)
+  generatedCode.value = generatePython(encodedImage)
 }
 
 function encodeImage(imageData, width, height) {
@@ -216,9 +216,9 @@ function encodeImage(imageData, width, height) {
   return encodedImage
 }
 
-function generateCpp(encodedImage) {
-  let cppCode = '#include "vex.h"\n\nusing namespace vex;\n\nvoid drawLogo() {\n'
-  cppCode += '    static const char* imageColors[] = {\n        '
+function generatePython(encodedImage) {
+  let pythonCode = 'def drawLogo():\n'
+  pythonCode += '    imageColors = [\n        '
 
   const uniqueColors = [
     ...new Set(encodedImage.map((item) => item[0]).filter((color) => color !== ''))
@@ -226,54 +226,56 @@ function generateCpp(encodedImage) {
   const colorIndices = {}
   uniqueColors.forEach((color, index) => {
     colorIndices[color] = index
-    cppCode += `"${color}", `
+    pythonCode += `"${color}", `
   })
 
-  cppCode += '\n    };\n\n    static const int imageIndices[] = {\n        '
+  pythonCode += '\n    ]\n\n    imageIndices = [\n        '
   encodedImage.forEach((item) => {
     const index = item[0] === '' ? -1 : colorIndices[item[0]]
-    cppCode += `${index}, `
+    pythonCode += `${index}, `
   })
 
-  cppCode += '\n    };\n\n    static const int imageCounts[] = {\n        '
+  pythonCode += '\n    ]\n\n    imageCounts = [\n        '
   encodedImage.forEach((item) => {
-    cppCode += `${item[1]}, `
+    pythonCode += `${item[1]}, `
   })
 
-  cppCode += '\n    };\n'
-  cppCode += '    int x = 0, y = 0;\n'
-  cppCode += '    for(int i = 0; i < sizeof(imageIndices) / sizeof(imageIndices[0]); ++i) {\n'
-  cppCode += '        int index = imageIndices[i];\n'
-  cppCode += '        int count = imageCounts[i];\n'
-  cppCode += '        if(index >= 0) {\n'
-  cppCode += '            const char* color = imageColors[index];\n'
-  cppCode += '            Brain.Screen.setPenColor(color);\n'
-  cppCode += '            for(int j = 0; j < count; ++j) {\n'
-  cppCode += '                Brain.Screen.drawPixel(x++, y);\n'
-  cppCode += '                if(x >= 480) { x = 0; y++; }\n'
-  cppCode += '            }\n'
-  cppCode += '        } else {\n'
-  cppCode += '            x += count;\n'
-  cppCode += '            while(x >= 480) { x -= 480; y++; }\n'
-  cppCode += '        }\n'
-  cppCode += '    }\n'
-  cppCode += '}\n'
+  pythonCode += '\n    ]\n'
+  pythonCode += '    x = 0\n'
+  pythonCode += '    y = 0\n'
+  pythonCode += '    for i in range(len(imageIndices)):\n'
+  pythonCode += '        index = imageIndices[i]\n'
+  pythonCode += '        count = imageCounts[i]\n'
+  pythonCode += '        if index >= 0:\n'
+  pythonCode += '            color = imageColors[index]\n'
+  pythonCode += '            brain.screen.set_pen_color(color)\n'
+  pythonCode += '            for j in range(count):\n'
+  pythonCode += '                brain.screen.draw_pixel(x, y)\n'
+  pythonCode += '                x += 1\n'
+  pythonCode += '                if x >= 480:\n'
+  pythonCode += '                    x = 0\n'
+  pythonCode += '                    y += 1\n'
+  pythonCode += '        else:\n'
+  pythonCode += '            x += count\n'
+  pythonCode += '            while x >= 480:\n'
+  pythonCode += '                x -= 480\n'
+  pythonCode += '                y += 1\n'
 
-  return cppCode
+  return pythonCode
 }
 
 function downloadCode() {
   const blob = new Blob([generatedCode.value], { type: 'text/plain' })
   const link = document.createElement('a')
   link.href = URL.createObjectURL(blob)
-  link.download = 'imageCode.cpp'
+  link.download = 'imageCode.py'
   link.click()
 }
 
 // Watcher to update highlighted code when generatedCode changes
 watch(generatedCode, (newValue) => {
   if (newValue) {
-    highlightedCode.value = hljs.highlight(newValue, { language: 'cpp' }).value
+    highlightedCode.value = hljs.highlight(newValue, { language: 'python' }).value
   }
 })
 
